@@ -1,0 +1,25 @@
+/* global.css */
+@import "tailwindcss";
+
+@theme {
+      /* Custom colors */
+      --color-bgPrimary: #f8f7fa;
+      --color-bgSecondary: #ffffff;
+      --color-textHighlight: #000000;
+      --color-textPrimary: #454545;
+      --color-primary: #002f70;
+      --color-secondary: #071331;
+      --color-success: #18c964;
+      --color-error: #c00306;
+      --color-errorLightX: #e69a9b;
+      --color-warning: #ff9500;     
+      --color-pending: #c0f5f0;
+
+      /* Additional colors from your original file */
+      --color-textSecondary: #a0a0a0;
+      --color-success: #10b981;
+      --color-error: #ef4444;
+      --color-warning: #f59e0b;
+      --color-info: #3b82f6;
+      --color-border: #404040;
+}
