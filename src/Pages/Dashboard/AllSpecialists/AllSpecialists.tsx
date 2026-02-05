@@ -26,83 +26,30 @@ import {
       PaginationPrevious,
 } from "../../../Components/Pagination/Pagination";
 import { Button } from "../../../Components/Button/Button";
-
-const servicesData = [
-      {
-            id: 1,
-            service: "Incorporation of a new company",
-            price: "RM 2,000",
-            purchases: "20",
-            duration: "3 Days",
-            approvalStatus: "Approved",
-            publishStatus: "Published",
-      },
-      {
-            id: 2,
-            service: "Incorporation of a new company",
-            price: "RM 2,000",
-            purchases: "0",
-            duration: "1 Day",
-            approvalStatus: "Under-Review",
-            publishStatus: "Published",
-      },
-      {
-            id: 3,
-            service: "Incorporation of a new company",
-            price: "RM 2,000",
-            purchases: "431",
-            duration: "14 Days",
-            approvalStatus: "Approved",
-            publishStatus: "Not Published",
-      },
-      {
-            id: 4,
-            service: "Incorporation of a new company",
-            price: "RM 2,000",
-            purchases: "0",
-            duration: "7 Days",
-            approvalStatus: "Under-Review",
-            publishStatus: "Published",
-      },
-      {
-            id: 5,
-            service: "Incorporation of a new company",
-            price: "RM 2,000",
-            purchases: "1283",
-            duration: "4 Days",
-            approvalStatus: "Rejected",
-            publishStatus: "Not Published",
-      },
-      {
-            id: 6,
-            service: "Incorporation of a new company",
-            price: "RM 2,000",
-            purchases: "9,180",
-            duration: "5 Days",
-            approvalStatus: "Rejected",
-            publishStatus: "Not Published",
-      },
-];
+import { Link } from "react-router-dom";
+import { useGetSpecialistsQuery, useExportSpecialistsMutation } from "../../../redux/features/specialist/specialistApi";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const getApprovalStatusConfig = (status: string) => {
       switch (status) {
-            case "Approved":
+            case "verified":
                   return {
                         bg: "bg-success/20",
                         text: "text-success",
-                        label: status,
+                        label: "Verified",
                   };
-            case "Under-Review":
+            case "pending":
                   return {
                         bg: "bg-pending/30",
                         text: "text-primary",
-                        label: status,
+                        label: "Pending",
                   };
-            case "Rejected":
+            case "rejected":
                   return {
                         bg: "bg-error/20",
                         text: "text-error",
-                        label: status,
+                        label: "Rejected",
                   };
             default:
                   return {
@@ -113,30 +60,65 @@ const getApprovalStatusConfig = (status: string) => {
       }
 };
 
-const getPublishStatusConfig = (status: string) => {
-      if (status === "Published") {
+const getPublishStatusConfig = (isDraft: boolean) => {
+      if (!isDraft) {
             return {
                   bg: "bg-primary",
                   text: "text-white",
-                  label: status,
+                  label: "Published",
             };
       }
       return {
             bg: "bg-textSecondary/20",
             text: "text-textSecondary",
-            label: status,
+            label: "Draft",
       };
 };
 
-const formatNumber = (num: string) => {
-      const number = parseInt(num.replace(/,/g, ""), 10);
-      if (number >= 1000) {
-            return `${(number / 1000).toFixed(1)}k`;
+const formatNumber = (num: number) => {
+      if (num >= 1000) {
+            return `${(num / 1000).toFixed(1)}k`;
       }
       return num;
 };
 
 export const AllSpecialists = () => {
+      const { data: specialists, isLoading, error } = useGetSpecialistsQuery(undefined);
+      const [exportSpecialists, { isLoading: isExporting }] = useExportSpecialistsMutation();
+
+      const handleExport = async () => {
+            try {
+                  const blob = await exportSpecialists().unwrap();
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', 'specialists.xlsx');
+                  document.body.appendChild(link);
+                  link.click();
+                  link.parentNode?.removeChild(link);
+                  toast.success("Specialists exported successfully");
+            } catch (err) {
+                  toast.error("Failed to export specialists");
+                  console.error(err);
+            }
+      };
+
+      if (isLoading) {
+            return (
+                  <div className="flex justify-center items-center h-96">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+            );
+      }
+
+      if (error) {
+            return (
+                  <div className="flex justify-center items-center h-96 text-error">
+                        Failed to load specialists
+                  </div>
+            );
+      }
+
       return (
             <section className="w-full mx-auto p-6 bg-bgSecondary rounded-lg shadow-sm border border-gray-100">
                   <div className="space-y-6">
@@ -182,17 +164,21 @@ export const AllSpecialists = () => {
                                           className="max-w-xs h-10 bg-bgPrimary border-gray-200 font-normal text-sm text-textPrimary rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                     />
                                     <div className="flex gap-2">
-                                          <Button className="h-10 bg-primary hover:bg-primary/90 rounded-md px-4 gap-2 transition-colors">
+                                          <Link
+                                                to="/specialists/create"
+                                                className="h-10 bg-primary hover:bg-primary/90 rounded-md px-4 gap-2 transition-colors flex items-center text-white">
                                                 <PlusIcon className="w-4 h-4" />
                                                 <span className="font-medium text-white text-sm">
                                                       Create Service
                                                 </span>
-                                          </Button>
+                                          </Link>
                                           <Button
                                                 variant="outline"
                                                 className="h-10 border-primary text-primary hover:bg-primary/5 rounded-md px-4 gap-2 transition-colors"
+                                                onClick={handleExport}
+                                                disabled={isExporting}
                                           >
-                                                <DownloadIcon className="w-4 h-4" />
+                                                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <DownloadIcon className="w-4 h-4" />}
                                                 <span className="font-medium text-sm">Export</span>
                                           </Button>
                                     </div>
@@ -231,12 +217,12 @@ export const AllSpecialists = () => {
                                                       </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                      {servicesData.map((service) => {
+                                                      {specialists?.map((service: any) => {
                                                             const approvalConfig = getApprovalStatusConfig(
-                                                                  service.approvalStatus
+                                                                  service.verification_status
                                                             );
                                                             const publishConfig = getPublishStatusConfig(
-                                                                  service.publishStatus
+                                                                  service.is_draft
                                                             );
 
                                                             return (
@@ -248,20 +234,20 @@ export const AllSpecialists = () => {
                                                                               <Checkbox className="w-4 h-4 bg-bgPrimary border-gray-300" />
                                                                         </TableCell>
                                                                         <TableCell className="font-normal text-textPrimary text-sm py-3">
-                                                                              <div className="max-w-[200px] truncate" title={service.service}>
-                                                                                    {service.service}
+                                                                              <div className="max-w-[200px] truncate" title={service.title}>
+                                                                                    {service.title}
                                                                               </div>
                                                                         </TableCell>
                                                                         <TableCell className="font-normal text-textPrimary text-sm py-3">
-                                                                              {service.price}
+                                                                              RM {service.final_price}
                                                                         </TableCell>
                                                                         <TableCell className="font-normal text-textPrimary text-sm py-3">
                                                                               <span className="font-medium">
-                                                                                    {formatNumber(service.purchases)}
+                                                                                    {formatNumber(service.total_number_of_reviews || 0)}
                                                                               </span>
                                                                         </TableCell>
                                                                         <TableCell className="font-normal text-textPrimary text-sm py-3">
-                                                                              {service.duration}
+                                                                              {service.duration_days} Days
                                                                         </TableCell>
                                                                         <TableCell className="py-3">
                                                                               <Badge
@@ -292,181 +278,27 @@ export const AllSpecialists = () => {
                                                 </TableBody>
                                           </Table>
                                     </div>
-
-                                    {/* Pagination */}
+                                    {/* Pagination (Keeping it static for now as simple implementation doesn't support pagination yet) */}
                                     <div className="flex justify-center pt-4">
                                           <Pagination>
                                                 <PaginationContent>
                                                       <PaginationItem>
-                                                            <PaginationPrevious
-                                                                  href="#"
-                                                                  className="font-normal text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            />
+                                                            <PaginationPrevious href="#" className="font-normal text-textPrimary text-sm hover:bg-bgPrimary" />
                                                       </PaginationItem>
                                                       <PaginationItem>
-                                                            <PaginationLink
-                                                                  href="#"
-                                                                  className="font-medium text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            >
-                                                                  1
-                                                            </PaginationLink>
+                                                            <PaginationLink href="#" className="font-medium text-textPrimary text-sm hover:bg-bgPrimary">1</PaginationLink>
                                                       </PaginationItem>
                                                       <PaginationItem>
-                                                            <PaginationLink
-                                                                  href="#"
-                                                                  isActive
-                                                                  className="font-medium text-white text-sm bg-primary hover:bg-primary/90 rounded-md w-9 h-9 flex items-center justify-center"
-                                                            >
-                                                                  2
-                                                            </PaginationLink>
-                                                      </PaginationItem>
-                                                      <PaginationItem>
-                                                            <PaginationLink
-                                                                  href="#"
-                                                                  className="font-medium text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            >
-                                                                  3
-                                                      </PaginationLink>
-                                                      </PaginationItem>
-                                                      <PaginationItem>
-                                                            <PaginationLink
-                                                                  href="#"
-                                                                  className="font-medium text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            >
-                                                                  4
-                                                            </PaginationLink>
-                                                      </PaginationItem>
-                                                      <PaginationItem>
-                                                            <PaginationLink
-                                                                  href="#"
-                                                                  className="font-medium text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            >
-                                                                  5
-                                                            </PaginationLink>
-                                                      </PaginationItem>
-                                                      <PaginationItem>
-                                                            <PaginationEllipsis className="font-medium text-textPrimary" />
-                                                      </PaginationItem>
-                                                      <PaginationItem>
-                                                            <PaginationLink
-                                                                  href="#"
-                                                                  className="font-medium text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            >
-                                                                  10
-                                                            </PaginationLink>
-                                                      </PaginationItem>
-                                                      <PaginationItem>
-                                                            <PaginationNext
-                                                                  href="#"
-                                                                  className="font-normal text-textPrimary text-sm hover:bg-bgPrimary"
-                                                            />
+                                                            <PaginationNext href="#" className="font-normal text-textPrimary text-sm hover:bg-bgPrimary" />
                                                       </PaginationItem>
                                                 </PaginationContent>
                                           </Pagination>
                                     </div>
                               </TabsContent>
 
-                              {/* Drafts Tab Content */}
-                              <TabsContent value="drafts" className="mt-0">
-                                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                          <Table>
-                                                <TableHeader>
-                                                      <TableRow className="border-b border-gray-200 bg-bgPrimary">
-                                                            <TableHead className="w-12 py-3">
-                                                                  <Checkbox className="w-4 h-4 bg-bgPrimary border-gray-300" />
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  SERVICE
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  PRICE
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  PURCHASES
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  DURATION
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  APPROVAL STATUS
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  PUBLISH STATUS
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  ACTIONS
-                                                            </TableHead>
-                                                      </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                      <TableRow>
-                                                            <TableCell
-                                                                  colSpan={8}
-                                                                  className="text-center py-12 font-normal text-textSecondary text-sm"
-                                                            >
-                                                                  <div className="flex flex-col items-center gap-2">
-                                                                        <div className="text-lg">No drafts available</div>
-                                                                        <p className="text-sm text-textSecondary">
-                                                                              Create your first service draft to get started
-                                                                        </p>
-                                                                  </div>
-                                                            </TableCell>
-                                                      </TableRow>
-                                                </TableBody>
-                                          </Table>
-                                    </div>
-                              </TabsContent>
-
-                              {/* Published Tab Content */}
-                              <TabsContent value="published" className="mt-0">
-                                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                          <Table>
-                                                <TableHeader>
-                                                      <TableRow className="border-b border-gray-200 bg-bgPrimary">
-                                                            <TableHead className="w-12 py-3">
-                                                                  <Checkbox className="w-4 h-4 bg-bgPrimary border-gray-300" />
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  SERVICE
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  PRICE
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  PURCHASES
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  DURATION
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  APPROVAL STATUS
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  PUBLISH STATUS
-                                                            </TableHead>
-                                                            <TableHead className="font-semibold text-textSecondary text-sm py-3">
-                                                                  ACTIONS
-                                                            </TableHead>
-                                                      </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                      <TableRow>
-                                                            <TableCell
-                                                                  colSpan={8}
-                                                                  className="text-center py-12 font-normal text-textSecondary text-sm"
-                                                            >
-                                                                  <div className="flex flex-col items-center gap-2">
-                                                                        <div className="text-lg">No published services available</div>
-                                                                        <p className="text-sm text-textSecondary">
-                                                                              Publish a service to make it available to clients
-                                                                        </p>
-                                                                  </div>
-                                                            </TableCell>
-                                                      </TableRow>
-                                                </TableBody>
-                                          </Table>
-                                    </div>
-                              </TabsContent>
+                              {/* Placeholder for other tabs */}
+                              <TabsContent value="drafts"><div>Drafts filter not implemented yet</div></TabsContent>
+                              <TabsContent value="published"><div>Published filter not implemented yet</div></TabsContent>
                         </Tabs>
                   </div>
             </section>

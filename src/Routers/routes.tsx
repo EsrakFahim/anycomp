@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Main from "../Layout/Main";
 import { AllSpecialists } from "../Pages/Dashboard/AllSpecialists/AllSpecialists";
+import CreateSpecialist from "../Pages/Dashboard/CreateSpecialist/CreateSpecialist";
 
 export const router = createBrowserRouter([
       {
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
                   {
                         path: 'invoices-receipts',
                         element: <div>Invoices & Receipts Page</div>
+                  },
+                  {
+                        path: 'specialists/create',
+                        element: <CreateSpecialist />
                   }
             ]
       },
