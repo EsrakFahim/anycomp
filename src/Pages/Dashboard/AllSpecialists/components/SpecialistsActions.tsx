@@ -18,7 +18,7 @@ export const SpecialistsActions = ({ handleExport, isExporting }: SpecialistsAct
             <div className="flex flex-col md:flex-row gap-2 w-full sm:w-auto">
                 <Link
                     to="/specialists/create"
-                    className="flex justify-center items-center h-10 bg-primary hover:bg-primary/90 rounded-md px-4 gap-2 transition-colors text-white flex-1 sm:flex-initial"
+                    className="flex justify-center items-center h-10 bg-primary hover:bg-primary/90 rounded-md px-4 gap-2 transition-colors text-white "
                 >
                     <PlusIcon className="w-4 h-4" />
                     <span className="font-medium text-white text-sm">Create Service</span>

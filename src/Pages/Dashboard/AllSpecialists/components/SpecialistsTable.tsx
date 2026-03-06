@@ -46,7 +46,7 @@ export const SpecialistsTable = ({ specialists, openMenuId, setOpenMenuId, openD
 
     return (
         <div className="border border-gray-200 rounded-lg">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-visible">
                 <Table>
                     <TableHeader>
                         <TableRow className="border-b border-gray-200 bg-bgPrimary">
@@ -139,7 +139,7 @@ export const SpecialistsTable = ({ specialists, openMenuId, setOpenMenuId, openD
                                                     onClick={() => setOpenMenuId(null)}
                                                 />
                                                 <div
-                                                    className="absolute right-0 sm:right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg z-[9999] border border-gray-200 max-w-[90vw] sm:max-w-none"
+                                                    className="absolute right-0 bottom-0 w-48 bg-white rounded-md shadow-lg z-[9999] border border-gray-200"
                                                     style={{
                                                         left: window.innerWidth < 640 ? 'auto' : undefined,
                                                         right: window.innerWidth < 640 ? '0' : undefined,
