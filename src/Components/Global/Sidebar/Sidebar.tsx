@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NavLink } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "../../Avavtar/Avatar";
 import { Button } from "../../Button/Button";
 import { ClipboardList, Mail, MessageCircleQuestionMark, ReceiptText, Settings, Signature, Tag, Users, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../../Avatar/Avatar";
 
 
 const navigationItems = [
