@@ -1,5 +1,6 @@
 /* global.css */
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&display=swap');
 
 @theme {
       /* Custom colors */
@@ -12,7 +13,7 @@
       --color-success: #18c964;
       --color-error: #c00306;
       --color-errorLightX: #e69a9b;
-      --color-warning: #ff9500;     
+      --color-warning: #ff9500;
       --color-pending: #c0f5f0;
 
       /* Additional colors from your original file */
@@ -22,4 +23,11 @@
       --color-warning: #f59e0b;
       --color-info: #3b82f6;
       --color-border: #404040;
+}
+
+.red-hat-display {
+      font-family: "Red Hat Display", sans-serif;
+      font-optical-sizing: auto;
+      font-weight: 400;
+      font-style: normal;
 }

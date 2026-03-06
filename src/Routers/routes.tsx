@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import Main from "../Layout/Main";
 import { AllSpecialists } from "../Pages/Dashboard/AllSpecialists/AllSpecialists";
 import CreateSpecialist from "../Pages/Dashboard/CreateSpecialist/CreateSpecialist";
+import Publish from "../Layout/Publish";
+import Specialists from "../Pages/Public/Specialists/Specialists";
 
 export const router = createBrowserRouter([
       {
@@ -39,6 +41,24 @@ export const router = createBrowserRouter([
                   {
                         path: 'specialists/create',
                         element: <CreateSpecialist />
+                  },
+                  {
+                        path: 'specialists/edit/:id',
+                        element: <CreateSpecialist />
+                  }
+            ]
+      },
+      {
+            path: 'publish',
+            element: <Publish />,
+            children: [
+                  {
+                        index: true,
+                        element: <Navigate to="specialists" replace />
+                  },
+                  {
+                        path: 'specialists',
+                        element: <Specialists />
                   }
             ]
       },
