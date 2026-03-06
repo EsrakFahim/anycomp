@@ -475,7 +475,7 @@ const SpecialistForm = () => {
 
                   {/* NEW: Success Modal after publish */}
                   {showSuccessModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] bg-opacity-50">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] ">
                               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                                     <h2 className="text-xl font-semibold mb-4">Congratulations!</h2>
                                     <p className="text-gray-600 mb-6">
