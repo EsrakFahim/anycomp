@@ -20,7 +20,7 @@ const Specialists = () => {
       const [debouncedSearch, setDebouncedSearch] = useState("");
       const [priceRange] = useState<{ min?: number; max?: number }>({});
       const [sortBy, setSortBy] = useState(""); // e.g., "newest", "price_low", "price_high"
-      const limit = 12; // items per page
+      const limit = 10; // items per page
 
       // Debounce search input
       useEffect(() => {
@@ -183,10 +183,10 @@ const Specialists = () => {
                                                 onChange={handleSortChange}
                                                 className=" border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                                           >
-                                                <option value="">Sort By</option>
+                                                <option value="">Default</option>
                                                 <option value="newest">Newest First</option>
-                                                <option value="price_low">Price: Low to High</option>
-                                                <option value="price_high">Price: High to Low</option>
+                                                <option value="price_asc">Price: Low to High</option>
+                                                <option value="price_desc">Price: High to Low</option>
                                           </select>
                                     </div>
                               </div>

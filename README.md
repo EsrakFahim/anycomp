@@ -1,73 +1,83 @@
-# React + TypeScript + Vite
+# Anycomp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern frontend application built with React, Vite, TypeScript, and Tailwind CSS. The project features a robust architecture configured with Redux Toolkit for state management, RTK Query for data fetching, and React Router for navigation.
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Framework:** React 19
+- **Build Tool:** Vite
+- **Language:** TypeScript
+- **State Management:** Redux Toolkit & RTK Query
+- **Routing:** React Router DOM v7
+- **Styling:** Tailwind CSS, Tailwind Merge, CVA
+- **UI Components:** Radix UI primitives
+- **Icons:** Lucide React
+- **Forms:** React Hook Form
+- **Toasts:** Sonner
+- **Data Visualization:** Recharts, Klinecharts
+- **Utilities:** Lodash, Date-fns, PapaParse, js-cookie
 
-## React Compiler
+## 📁 Project Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The codebase is organized defensively to promote scalability and modularity:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+├── assets/          # Static assets like images and branding
+├── Components/      # Reusable UI components (Buttons, Inputs, Tables, etc.)
+├── Layout/          # Layout wrappers (Dashboard Layout, Public Layout, etc.)
+├── lib/             # Utility functions and helpers (e.g., formatNumber)
+├── Pages/           # Application route pages
+│   ├── Dashboard/   # Protected dashboard pages (e.g., CreateSpecialist, AllSpecialists)
+│   └── Public/      # Public-facing pages (e.g., Specialists Listing)
+├── redux/           # Redux state configuration
+│   ├── api/         # Base RTK Query API slice setup
+│   ├── features/    # Feature-specific slices and injected endpoints
+│   └── store.ts     # Main Redux store configuration
+├── Routers/         # Application routing configuration (routes.tsx)
+├── global.css       # Global stylesheet with Tailwind directives
+└── main.tsx         # Application entry point (Providers, Router injection)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Key Architectural Decisions
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **State Management:** Uses Redux Toolkit (RTK) with RTK Query for predictable state and efficient data fetching, caching, and optimistic updates.
+2. **Component Modularity:** Large page components are split into co-located sub-components within their respective page directories (e.g., `src/Pages/Dashboard/CreateSpecialist/components/`).
+3. **Form Handling:** Employs `react-hook-form` to manage complex form states performantly without re-rendering the entire component tree.
+4. **Styling Approach:** Utilizes Tailwind CSS paired with `class-variance-authority` (cva) and `tailwind-merge` for scalable, dynamic utility class construction in reusable UI components.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 💻 Getting Started
+
+### Prerequisites
+
+Ensure you have Node.js installed on your machine.
+
+### Installation
+
+Clone the repository and install dependencies:
+
+```bash
+npm install
 ```
+
+### Available Scripts
+
+In the project directory, you can run:
+
+#### `npm run dev`
+Runs the app in development mode using Vite. Open [http://localhost:5173](http://localhost:5173) to view it in your browser.
+
+#### `npm run build`
+Builds the app for production to the `dist` folder. It correctly bundles React in production mode and optimizes the build for the best performance.
+
+#### `npm run preview`
+Locally preview the production build generated by `npm run build`.
+
+#### `npm run lint`
+Runs ESLint to statically analyze your code to quickly find problems.
+
+## 🔒 Authentication & Storage
+- Handles client-side tokens or persisted states via `js-cookie`.
+
+## 📈 Charts & Visualization
+- Integrates `recharts` and `klinecharts` for complex financial and data charting requirements.

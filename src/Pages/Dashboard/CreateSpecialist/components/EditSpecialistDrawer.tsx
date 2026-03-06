@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Loader2, X } from "lucide-react";
 import { Input } from "../../../../Components/Input/Input";
 import clsx from "clsx";

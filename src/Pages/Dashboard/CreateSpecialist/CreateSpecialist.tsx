@@ -15,6 +15,7 @@ import { ImageUploadSlots } from "./components/ImageUploadSlots";
 import { PriceCard } from "./components/PriceCard";
 import { EditSpecialistDrawer } from "./components/EditSpecialistDrawer";
 import { PublishConfirmModal } from "./components/PublishConfirmModal";
+import { useUploadMediaMutation } from "../../../redux/features/media";
 
 interface SpecialistFormInputs {
       title: string;
@@ -33,6 +34,8 @@ const SpecialistForm = () => {
       const isEditMode = !!id;
       const navigate = useNavigate();
 
+      const [uploadMedia, { isLoading: isUploading }] = useUploadMediaMutation();
+
       // Fetch all available service offerings
       const { data: servicesOffered, isLoading: isLoadingServices } = useGetServicesOfferedQuery({});
       // Fetch specialist data if in edit mode
@@ -45,7 +48,7 @@ const SpecialistForm = () => {
       const [createSpecialist, { isLoading: isCreating }] = useCreateSpecialistMutation();
       const [updateSpecialist, { isLoading: isUpdating }] = useUpdateSpecialistMutation();
 
-      const isLoadingSubmit = isCreating || isUpdating;
+      const isLoadingSubmit = isUploading || isCreating || isUpdating;
 
       const { register, handleSubmit, watch, setValue, reset, formState } = useForm<SpecialistFormInputs>({
             defaultValues: {
@@ -61,15 +64,17 @@ const SpecialistForm = () => {
             },
       });
 
-      const { isDirty } = formState; // Track if form has unsaved changes for edit mode
+      const { isDirty } = formState;
 
-      const [imageFiles, setImageFiles] = useState<(File | null)[]>([null, null, null]);
-      const [previews, setPreviews] = useState<(string | null)[]>([null, null, null]);
-      const [keepMediaIds, setKeepMediaIds] = useState<string[]>([]);
+      // Media state: three fixed slots
+      const [slotMediaIds, setSlotMediaIds] = useState<(string | null)[]>([null, null, null]); // IDs of uploaded/existing media per slot
+      const [previews, setPreviews] = useState<(string | null)[]>([null, null, null]); // preview URLs
+      const [uploadingSlots, setUploadingSlots] = useState<boolean[]>([false, false, false]); // loading per slot
 
       const [isDrawerOpen, setIsDrawerOpen] = useState(false);
       const [isDropdownOpen, setIsDropdownOpen] = useState(false);
       const [showPublishModal, setShowPublishModal] = useState(false);
+      const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: success modal state
 
       const watchValues = watch();
       const basePrice = watchValues.base_price;
@@ -95,7 +100,6 @@ const SpecialistForm = () => {
 
                   try {
                         const response = await getPlatformFee({ price: debouncedBasePrice }).unwrap();
-                        // response.data contains platform_fee_percentage
                         if (response?.data?.platform_fee_percentage) {
                               const feePercentage = Number(response.data.platform_fee_percentage);
                               const fee = (Number(debouncedBasePrice) * feePercentage) / 100;
@@ -123,7 +127,7 @@ const SpecialistForm = () => {
       // Load existing data into form when edit mode and data is available
       useEffect(() => {
             if (isEditMode && specialist && servicesOffered) {
-                  // Map service offerings to their IDs (UUIDs) from the nested serviceOffering object
+                  // Map service offerings to their IDs
                   const offeringIds = specialist.serviceOfferings
                         ?.map((so: any) => so.serviceOffering?.id)
                         .filter(Boolean) || [];
@@ -140,62 +144,24 @@ const SpecialistForm = () => {
                         additional_offerings: offeringIds,
                   });
 
-                  // Handle media – use the full URL from file_name
+                  // Handle media – map to slots by display_order
                   if (specialist.media?.length) {
                         const sorted = [...specialist.media].sort((a, b) => a.display_order - b.display_order);
-                        const mediaIds: string[] = [];
+                        const newSlotIds: (string | null)[] = [null, null, null];
+                        const newPreviews: (string | null)[] = [null, null, null];
+
                         sorted.slice(0, 3).forEach((media, idx) => {
-                              mediaIds.push(media.id);
-                              setPreviews((prev) => {
-                                    const newPreviews = [...prev];
-                                    newPreviews[idx] = media.file_name; // full Cloudinary URL
-                                    return newPreviews;
-                              });
+                              newSlotIds[idx] = media.id;
+                              newPreviews[idx] = media.file_name; // full Cloudinary URL
                         });
-                        setKeepMediaIds(mediaIds);
+
+                        setSlotMediaIds(newSlotIds);
+                        setPreviews(newPreviews);
                   }
             }
       }, [isEditMode, specialist, servicesOffered, reset]);
 
-      const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
-            if (e.target.files && e.target.files[0]) {
-                  const file = e.target.files[0];
-                  setImageFiles((prev) => {
-                        const newFiles = [...prev];
-                        newFiles[slotIndex] = file;
-                        return newFiles;
-                  });
-                  if (previews[slotIndex]) URL.revokeObjectURL(previews[slotIndex]!);
-                  setPreviews((prev) => {
-                        const newPreviews = [...prev];
-                        newPreviews[slotIndex] = URL.createObjectURL(file);
-                        return newPreviews;
-                  });
-                  if (keepMediaIds[slotIndex]) {
-                        setKeepMediaIds((prev) => prev.filter((_, idx) => idx !== slotIndex));
-                  }
-            }
-      };
-
-      const removeImage = (slotIndex: number) => {
-            setImageFiles((prev) => {
-                  const newFiles = [...prev];
-                  newFiles[slotIndex] = null;
-                  return newFiles;
-            });
-            setPreviews((prev) => {
-                  const newPreviews = [...prev];
-                  if (newPreviews[slotIndex]) {
-                        URL.revokeObjectURL(newPreviews[slotIndex]!);
-                        newPreviews[slotIndex] = null;
-                  }
-                  return newPreviews;
-            });
-            if (keepMediaIds[slotIndex]) {
-                  setKeepMediaIds((prev) => prev.filter((_, idx) => idx !== slotIndex));
-            }
-      };
-
+      // Clean up blob URLs on unmount
       useEffect(() => {
             return () => {
                   previews.forEach((preview) => {
@@ -203,6 +169,104 @@ const SpecialistForm = () => {
                   });
             };
       }, [previews]);
+
+      const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            // Validate file size (max 4MB) and type
+            if (file.size > 4 * 1024 * 1024) {
+                  toast.error("File size must be less than 4MB");
+                  return;
+            }
+            if (!file.type.startsWith("image/")) {
+                  toast.error("Only image files are allowed");
+                  return;
+            }
+
+            // Set uploading state for this slot
+            setUploadingSlots((prev) => {
+                  const newState = [...prev];
+                  newState[slotIndex] = true;
+                  return newState;
+            });
+
+            // Show temporary blob preview
+            const blobUrl = URL.createObjectURL(file);
+            setPreviews((prev) => {
+                  const newPreviews = [...prev];
+                  // Revoke previous blob if any
+                  if (newPreviews[slotIndex]?.startsWith("blob:")) {
+                        URL.revokeObjectURL(newPreviews[slotIndex]!);
+                  }
+                  newPreviews[slotIndex] = blobUrl;
+                  return newPreviews;
+            });
+
+            try {
+                  // Upload immediately
+                  const formData = new FormData();
+                  formData.append("file", file); // adjust field name if needed
+                  const response = await uploadMedia(formData).unwrap();
+
+                  // Assuming response.data contains the media object with id
+                  const mediaId = response.data.url; // adjust according to actual response
+
+                  // Update slotMediaIds with the new ID
+                  setSlotMediaIds((prev) => {
+                        const newIds = [...prev];
+                        newIds[slotIndex] = mediaId;
+                        return newIds;
+                  });
+
+                  toast.success("Image uploaded successfully");
+            } catch (error) {
+                  console.error("Upload failed", error);
+                  toast.error("Failed to upload image");
+
+                  // Revert preview and clear the slot
+                  setPreviews((prev) => {
+                        const newPreviews = [...prev];
+                        if (newPreviews[slotIndex]?.startsWith("blob:")) {
+                              URL.revokeObjectURL(newPreviews[slotIndex]!);
+                        }
+                        newPreviews[slotIndex] = null;
+                        return newPreviews;
+                  });
+                  setSlotMediaIds((prev) => {
+                        const newIds = [...prev];
+                        newIds[slotIndex] = null;
+                        return newIds;
+                  });
+            } finally {
+                  setUploadingSlots((prev) => {
+                        const newState = [...prev];
+                        newState[slotIndex] = false;
+                        return newState;
+                  });
+            }
+      };
+
+      const removeImage = (slotIndex: number) => {
+            // Revoke blob URL if present
+            if (previews[slotIndex]?.startsWith("blob:")) {
+                  URL.revokeObjectURL(previews[slotIndex]!);
+            }
+
+            setPreviews((prev) => {
+                  const newPreviews = [...prev];
+                  newPreviews[slotIndex] = null;
+                  return newPreviews;
+            });
+
+            setSlotMediaIds((prev) => {
+                  const newIds = [...prev];
+                  newIds[slotIndex] = null;
+                  return newIds;
+            });
+
+            // Note: we do NOT delete the media from server; it becomes orphaned
+      };
 
       const toggleOption = (id: string) => {
             const current = watchValues.additional_offerings || [];
@@ -213,7 +277,7 @@ const SpecialistForm = () => {
       };
 
       const hasAtLeastOneImage = (): boolean => {
-            return keepMediaIds.length > 0 || imageFiles.some((file) => file !== null);
+            return slotMediaIds.some((id) => id !== null);
       };
 
       const onSubmit = async (data: SpecialistFormInputs, draftStatus: boolean) => {
@@ -222,18 +286,22 @@ const SpecialistForm = () => {
                   return;
             }
 
+            // Prepare media URLs array (filter out nulls)
+            const mediaUrlsToSend = slotMediaIds.filter((id): id is string => id !== null);
+
             try {
                   const formData = new FormData();
 
-                  data.is_draft = draftStatus;
-
-                  Object.entries(data).forEach(([key, value]) => {
-                        if (key === "additional_offerings") {
-                              formData.append(key, JSON.stringify(value));
-                        } else {
-                              formData.append(key, String(value));
-                        }
-                  });
+                  formData.append("title", data.title);
+                  formData.append("description", data.description);
+                  formData.append("slug", data.slug);
+                  formData.append("base_price", String(data.base_price));
+                  formData.append("platform_fee", String(data.platform_fee));
+                  formData.append("final_price", String(data.final_price));
+                  formData.append("duration_days", String(data.duration_days));
+                  formData.append("is_draft", String(draftStatus));
+                  formData.append("additional_offerings", JSON.stringify(data.additional_offerings || []));
+                  formData.append("media_urls", JSON.stringify(mediaUrlsToSend)); // send as JSON array
 
                   if (!isEditMode) {
                         formData.append("verification_status", "pending");
@@ -242,21 +310,25 @@ const SpecialistForm = () => {
                         formData.append("total_number_of_reviews", "0");
                   }
 
-                  imageFiles.forEach((file) => {
-                        if (file) formData.append("media", file);
-                  });
-                  if (isEditMode && keepMediaIds.length > 0) {
-                        formData.append("existing_media", JSON.stringify(keepMediaIds));
-                  }
-
                   if (isEditMode) {
                         await updateSpecialist({ id, formData }).unwrap();
-                        toast.success(draftStatus ? "Specialist saved as draft" : "Specialist published successfully");
+                        if (draftStatus) {
+                              toast.success("Specialist saved as draft");
+                              navigate("/specialists");
+                        } else {
+                              toast.success("Specialist published successfully");
+                              setShowSuccessModal(true); // Show success modal instead of navigating
+                        }
                   } else {
                         await createSpecialist(formData).unwrap();
-                        toast.success(draftStatus ? "Specialist saved as draft" : "Specialist published successfully");
+                        if (draftStatus) {
+                              toast.success("Specialist saved as draft");
+                              navigate("/specialists");
+                        } else {
+                              toast.success("Specialist published successfully");
+                              setShowSuccessModal(true); // Show success modal instead of navigating
+                        }
                   }
-                  navigate("/specialists");
             } catch (err) {
                   toast.error(draftStatus ? "Failed to save draft" : "Failed to publish specialist");
                   console.error(err);
@@ -313,12 +385,11 @@ const SpecialistForm = () => {
 
                   {/* MAIN GRID */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                        {/* LEFT SIDE */}
                         <div className="md:col-span-2 space-y-4">
-                              {/* 3-IMAGE UPLOAD GRID */}
                               <div className="">
                                     <ImageUploadSlots
                                           previews={previews}
+                                          uploadingSlots={uploadingSlots}
                                           handleFileChange={handleFileChange}
                                           removeImage={removeImage}
                                     />
@@ -401,6 +472,35 @@ const SpecialistForm = () => {
                         confirmPublish={confirmPublish}
                         isLoadingSubmit={isLoadingSubmit}
                   />
+
+                  {/* NEW: Success Modal after publish */}
+                  {showSuccessModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] bg-opacity-50">
+                              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                                    <h2 className="text-xl font-semibold mb-4">Congratulations!</h2>
+                                    <p className="text-gray-600 mb-6">
+                                          Your specialist has been published successfully.
+                                    </p>
+                                    <div className="flex justify-end gap-3">
+                                          <button
+                                                onClick={() => setShowSuccessModal(false)}
+                                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                          >
+                                                Close
+                                          </button>
+                                          <button
+                                                onClick={() => {
+                                                      setShowSuccessModal(false);
+                                                      navigate("/publish/specialists");
+                                                }}
+                                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark"
+                                          >
+                                                View All Specialists
+                                          </button>
+                                    </div>
+                              </div>
+                        </div>
+                  )}
             </section>
       );
 };

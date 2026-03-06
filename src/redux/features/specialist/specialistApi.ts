@@ -54,7 +54,7 @@ export const specialistApi = apiSlice.injectEndpoints({
                 method: 'PUT',
                 body: formData,
             }),
-            invalidatesTags: (result, error, { id }) => [{ type: 'Specialist', id }],
+            invalidatesTags: ['Specialist'],
         }),
 
         getServicesOffered: builder.query({
@@ -69,12 +69,13 @@ export const specialistApi = apiSlice.injectEndpoints({
         }),
 
         getPublishedSpecialists: builder.query({
-            query: ({ page = 1, limit = 10, search = '' }) => {
+            query: ({ page = 1, limit = 10, search = '', sortBy }) => {
                 const params = new URLSearchParams()
                 if (page) params.append('page', page.toString())
                 if (limit) params.append('limit', limit.toString())
                 if (search) params.append('search', search)
-
+                if (sortBy) params.append('sort_by', sortBy)
+                    
                 return ({
                     url: `/specialists/public?${params.toString()}`,
                 })
